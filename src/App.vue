@@ -1,18 +1,18 @@
 <template>
-  <input-box></input-box>
-  <list></list>
+  <layout></layout>
 </template>
 
 <script>
-  import InputBox from './components/Input'
-  import List from './components/List'
-  import store from './vuex/store'
+import Layout from './components/layout/Layout'
 
-  export default {
-    store: store,
-    components: {
-      InputBox,
-      List
-    }
+export default {
+  replace: false,
+  components: {
+    Layout
   }
+}
 </script>
+
+<style lang="scss">
+@import "./scss/base";
+</style>
