@@ -14,10 +14,9 @@
 export default {}
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "../../scss/base";
 @import "../../scss/helpers/mixins";
-
 .new-wrap {
   height: 100%;
   text-align: center;

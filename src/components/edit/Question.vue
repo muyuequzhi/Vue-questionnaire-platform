@@ -239,7 +239,7 @@ export default {
             .iconfont {
               list-style: none;
               float: left;
-              margin-left: .5rem;
+              padding: 0 .25rem;
               line-height: 1.5;
               &:hover {
                 color: $blue;

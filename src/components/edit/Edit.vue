@@ -26,12 +26,16 @@
           </div>
         </div>
       </div>
+      <footer class="footer">
+        <calendar></calendar>
+      </footer>
     </div>
   </div>
 </template>
 
 <script>
 import Question from './Question'
+import Calendar from '../common/Calendar'
 export default {
   data () {
     return this.getData() ? this.getData() : {
@@ -78,7 +82,8 @@ export default {
     }
   },
   components: {
-    Question
+    Question,
+    Calendar
   },
   events: {
     'change-option-value': function (qIndex, oIndex, value) {
@@ -182,57 +187,58 @@ export default {
           }
         }
       }
-      @at-root {
-        .body {
-          padding: 0 1rem;
-          .body-wrap {
-            border-top: 1px solid $line-color;
-            border-bottom: 1px solid $line-color;
-            margin-bottom: 2rem;
-            @at-root .questions {
-              padding: 2rem 0;
+      .body {
+        padding: 0 1rem;
+        .body-wrap {
+          border-top: 1px solid $line-color;
+          border-bottom: 1px solid $line-color;
+          margin-bottom: 2rem;
+          @at-root .questions {
+            padding: 2rem 0;
+          }
+          .tools {
+            text-align: center;
+            border-radius: 0;
+            margin: 1rem auto;
+            border: 1px solid $gray;
+            &:hover {
+              .toolbar {
+                height: 4.4rem;
+              }
+              .add-btn {
+                background: $light-gray;
+              }
             }
-            .tools {
-              text-align: center;
-              border-radius: 0;
-              margin: 1rem auto;
-              border: 1px solid $gray;
-              &:hover {
-                .toolbar {
-                  height: 4.4rem;
-                }
-                .add-btn {
-                  background: $light-gray;
-                }
-              }
-              @at-root .toolbar {
-                height: 0;
-                overflow: hidden;
-                transition: height .3s ease;
-                .btn {
-                  @include button(.5rem, .2rem, $light-black);
-                  margin: 1rem .5rem;
-                  display: inline-block;
-                  line-height: 1.8rem;
-                  .iconfont {
-                    margin-right: .3rem;
-                  }
-                }
-              }
-              @at-root .add-btn {
+            @at-root .toolbar {
+              height: 0;
+              overflow: hidden;
+              transition: height .3s ease;
+              .btn {
+                @include button(.5rem, .2rem, $light-black);
+                margin: 1rem .5rem;
+                display: inline-block;
+                line-height: 1.8rem;
                 .iconfont {
-                  margin-right: .5rem;
+                  margin-right: .3rem;
                 }
-                background: $bg-gray;
-                cursor: pointer;
-                font-size: $font-size-default;
-                color: $light-black;
-                line-height: 3;
-                width: 100%;
               }
+            }
+            @at-root .add-btn {
+              .iconfont {
+                margin-right: .5rem;
+              }
+              background: $bg-gray;
+              cursor: pointer;
+              font-size: $font-size-default;
+              color: $light-black;
+              line-height: 3;
+              width: 100%;
             }
           }
         }
+      }
+      .footer {
+        padding: 0 1.5rem 1.5rem;
       }
     }
   }
