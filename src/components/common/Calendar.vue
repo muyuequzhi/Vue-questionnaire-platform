@@ -47,8 +47,9 @@
     </table>
     <input type="text"
       class="date-picker"
-      @click="$event.stopPropagation()"
+      @change="dateChangeHandler"
       @focus="show = true"
+      @click="$event.stopPropagation()"
       v-el:date-picker>
   </div>
 </template>
@@ -58,8 +59,8 @@ export default {
   data () {
     return {
       show: false,
-      mode: 'year',
-      range: true,
+      mode: 'date',
+      range: false,
       rangeStart: '',
       rangeEnd: '',
       dateSelected: '',
@@ -143,7 +144,7 @@ export default {
       if (!this.range) {
         return this.dateSelected
       }
-      return this.rangeStart + ' ~ ' + this.rangeEnd
+      return this.rangeStart + '~' + this.rangeEnd
     },
     years () {
       let tmp = []
@@ -163,6 +164,9 @@ export default {
     year (newYear) {
       this.yearRangeStart = newYear - (newYear % 10)
       this.yearRangeEnd = this.yearRangeStart + 9
+    },
+    value () {
+      this.dateChangeHandler(this.value)
     }
   },
   created () {
@@ -278,6 +282,9 @@ export default {
     },
     hasClass (ele, className) {
       return ele.classList.contains(className)
+    },
+    dateChangeHandler (dateValue) {
+      this.$dispatch('date-change', dateValue)
     }
   }
 }
@@ -286,7 +293,7 @@ export default {
 <style lang="scss">
 $baseColor: #018fe5;
 $lightColor: lighten($baseColor,10%);
-$preLightColor: lighten($baseColor,15%);
+$preLightColor: lighten($baseColor,30%);
 $gray: #ccc;
 
 .calendar {
@@ -319,7 +326,7 @@ $gray: #ccc;
     .calendar-next {
       cursor: pointer;
       &:hover {
-        background-color: $preLightColor;
+        background-color: $lightColor;
       }
     }
     .calendar-select {

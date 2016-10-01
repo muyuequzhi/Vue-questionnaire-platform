@@ -188,7 +188,7 @@ export default {
       outline: none;
       &:hover,
       &:focus {
-        border-color: $light-black;
+        border-color: $blue;
         background-color: $bg-yellow;
       }
     }
@@ -229,20 +229,20 @@ export default {
             top: 0;
             right: 0;
             font-size: $font-size-default;
-            margin-top: -2.2rem;
             visibility: hidden;
-            // opacity: 0;
+            transform: translateY(-100%);
+            background-color: $blue;
             &.active {
               visibility: visible;
-              // opacity: 1;
             }
             .iconfont {
               list-style: none;
               float: left;
               padding: 0 .25rem;
               line-height: 1.5;
+              color: #fff;
               &:hover {
-                color: $blue;
+                color: lighten($blue, 30%);
               }
             }
           }
