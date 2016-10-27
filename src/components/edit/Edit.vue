@@ -32,8 +32,8 @@
           <calendar v-ref:date-picker></calendar>
         </div>
         <div class="operation">
-          <span class="btn" @click="saveBtnHandler">保存问卷</span>
-          <span class="btn" @click="publicBtnHandler">发布问卷</span>
+          <span class="btn" :class="{ disabled: isLoading }" @click="saveBtnHandler">保存问卷</span>
+          <span class="btn" :class="{ disabled: isLoading }" @click="publishBtnHandler">发布问卷</span>
         </div>
       </footer>
     </div>
@@ -59,26 +59,32 @@ import Question from './Question'
 import Calendar from '../common/Calendar'
 import Alert from '../common/Alert'
 import Modal from '../common/Modal'
+import uuid from 'uuid'
+
 export default {
   data () {
-    let qnEditing = window.localStorage.getItem('qn-editing') ? JSON.parse(window.localStorage.getItem('qn-editing')) : []
-    let obj = {}
+    let editMode
+    if (!window.sessionStorage.getItem('edit-mode')) {
+      editMode = 'create'
+      window.sessionStorage.setItem('edit-mode', 'create')
+    } else {
+      editMode = window.sessionStorage.getItem('edit-mode')
+    }
     let defaults = {
-      title: '',
+      title: '问卷题目',
       questions: [],
-      canHideOptionPanel: true,
       showAlert: false,
-      public: false,
+      publish: false,
       showModal: false,
       routerCanDeactivate: false,
-      expires: ''
+      expires: '',
+      qnId: -1,
+      isLoading: false
     }
-    if (qnEditing.length !== 0) {
-      Object.assign(obj, defaults, qnEditing)
-    } else {
-      Object.assign(obj, defaults, { qnId: this.createID() })
+    if (editMode === 'create') {
+      Object.assign(defaults, { qnId: this.createId() })
     }
-    return obj
+    return defaults
   },
   computed: {
     questionaire () {
@@ -86,28 +92,38 @@ export default {
         title: this.title,
         questions: this.questions,
         expires: this.expires,
-        public: this.public,
+        publish: this.publish,
         qnId: this.qnId
       }
     }
   },
   methods: {
+    // 保存问卷
     saveData () {
-      let data = window.localStorage.getItem('pf-all-qn') ? JSON.parse(window.localStorage.getItem('pf-all-qn')) : []
-      let isEdit = false
-      let editQnId = -1
-      for (let i = 0, len = data.length; i < len; i++) {
-        if (data[i].qnId === this.questionaire.qnId) {
-          isEdit = true
-          editQnId = i
-        }
+      if (!this.isLoading) {
+        let editMode = window.sessionStorage.getItem('edit-mode')
+        this.isLoading = true
+        window.fetch('/updateUserQnData', {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `qnData=${JSON.stringify(this.questionaire)}&editMode=${editMode}`,
+          credentials: 'same-origin'
+        })
+        .then(res => {
+          return res.json()
+        })
+        .then(result => {
+          if (result.code === 0 || result.code === 1) {
+            this.canDeactivate = true
+            this.$route.router.go({ path: '/platform/questionare' })
+          } else if (result.code === -1) {
+            this.canDeactivate = true
+            this.$route.router.go({ path: '/login' })
+          }
+        })
       }
-      if (isEdit) {
-        data.splice(editQnId, 1)
-        this.clearEditingData()
-      }
-      data.push(this.questionaire)
-      window.localStorage.setItem('pf-all-qn', JSON.stringify(data))
     },
     addQuestion (type) {
       let option = {
@@ -115,18 +131,8 @@ export default {
         type: type
       }
       if (type !== 'text') {
-        option.answers = [
-          {
-            value: '选项1',
-            showOptionTools: false,
-            canHideOptionPanel: true
-          },
-          {
-            value: '选项2',
-            showOptionTools: false,
-            canHideOptionPanel: true
-          }
-        ]
+        option.answers = ['选项1', '选项2']
+        option.answersData = [this.getRandomNumber(), this.getRandomNumber()]
       } else {
         option.required = false
         option.text = ''
@@ -139,30 +145,49 @@ export default {
     },
     modalCallback () {
       this.canDeactivate = true
-      this.clearEditingData()
-      this.$route.router.go({ path: '/questionare' })
+      this.$route.router.go({ path: '/platform/questionare' })
     },
     saveBtnHandler () {
       this.saveData()
-      this.canDeactivate = true
-      this.$route.router.go({ path: '/questionare' })
     },
-    publicBtnHandler () {
-      this.public = true
+    publishBtnHandler () {
+      this.publish = true
       this.saveBtnHandler()
     },
-    createID () {
-      let thisId = Number(window.localStorage.getItem('qn-id')) || 0
-      let nextId = thisId + 1
-      window.localStorage.setItem('qn-id', nextId)
-      return thisId
+    createId () {
+      return uuid.v1()
     },
-    clearEditingData () {
-      window.localStorage.removeItem('qn-editing')
+    getRandomNumber () {
+      return Math.floor(Math.random() * 30)
     }
   },
-  ready () {
-    this.$refs.datePicker.$els.datePicker.value = this.expires
+  created () {
+    let editMode = window.sessionStorage.getItem('edit-mode')
+    let currentQnId = window.sessionStorage.getItem('current-qn-id')
+    // 如果是编辑模式，获取要编辑的那份问卷
+    if (editMode === 'modify') {
+      window.fetch(`/getUserQnData?qnId=${currentQnId}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        return response.json()
+      })
+      .then(result => {
+        if (result.code === 1) {
+          let qnData = result.data
+          this.title = qnData.title
+          this.questions = qnData.questions
+          this.publish = qnData.publish
+          this.expires = qnData.expires
+          this.qnId = qnData.qnId
+          this.$refs.datePicker.$els.datePicker.value = qnData.expires
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    }
   },
   components: {
     Question,
@@ -172,53 +197,34 @@ export default {
   },
   events: {
     'change-option-value': function (qIndex, oIndex, value) {
-      this.questions[qIndex].answers[oIndex].value = value
+      this.questions[qIndex].answers[oIndex] = value
     },
     'change-question-title': function (qIndex, value) {
       this.questions[qIndex].title = value
-    },
-    'show-option-tools': function (qIndex, oIndex) {
-      this.questions[qIndex].answers[oIndex].showOptionTools = true
-    },
-    'hide-option-tools': function (qIndex, oIndex) {
-      if (this.questions[qIndex].answers[oIndex]) {
-        if (this.questions[qIndex].answers[oIndex].canHideOptionPanel) {
-          this.questions[qIndex].answers[oIndex].showOptionTools = false
-        }
-      }
     },
     'question-pos-change': function (oldIndex, newIndex) {
       this.transposition(this.questions, oldIndex, newIndex)
     },
     'add-option': function (qIndex) {
-      this.questions[qIndex].answers.push({
-        value: '选项' + (this.questions[qIndex].answers.length + 1),
-        showOptionTools: false,
-        canHideOptionPanel: true
-      })
+      this.questions[qIndex].answers.push('选项' + (this.questions[qIndex].answers.length + 1))
+      this.questions[qIndex].answersData.push(this.getRandomNumber())
     },
     'delete-option': function (qIndex, oIndex) {
       this.questions[qIndex].answers.splice(oIndex, 1)
-    },
-    'lock-panel': function (qIndex, oIndex) {
-      this.questions[qIndex].answers[oIndex].canHideOptionPanel = false
-    },
-    'unlock-panel': function (qIndex, oIndex) {
-      this.questions[qIndex].answers[oIndex].canHideOptionPanel = true
+      this.questions[qIndex].answersData.pop()
     },
     'delete-question': function (qIndex) {
       this.questions.splice(qIndex, 1)
     },
     'copy-question': function (qIndex) {
-      let newQ = Object.assign({}, this.questions[qIndex])
+      let temp = JSON.stringify(this.questions[qIndex])
+      let newQ = JSON.parse(temp)
       this.questions.push(newQ)
     },
     'change-text-required': function (qIndex, required) {
       this.questions[qIndex].required = required
     },
     'option-pos-change': function (qIndex, oOldIndex, oNewIndex) {
-      this.questions[qIndex].answers[oOldIndex].canHideOptionPanel = true
-      this.questions[qIndex].answers[oOldIndex].showOptionTools = false
       this.transposition(this.questions[qIndex].answers, oOldIndex, oNewIndex)
     },
     'date-change': function (dateValue) {
@@ -226,24 +232,12 @@ export default {
     }
   },
   route: {
-    canReuse () {
-      console.log('canReuse')
-    },
     canDeactivate () {
       if (!this.canDeactivate) {
         this.showModal = true
         return false
       }
       return true
-    },
-    deactivate () {
-      console.log('deactivate')
-    },
-    canActivate () {
-      console.log('canActivate')
-    },
-    activate () {
-      console.log('activate')
     }
   }
 }
@@ -251,6 +245,9 @@ export default {
 <style lang="scss">
 @import "../../scss/base";
 @import "../../scss/helpers/mixins";
+.disabled {
+  @include btn-disabled;
+}
 .qn-wrap {
   padding: 3rem 6rem;
   border-top: 1px solid $line-color;

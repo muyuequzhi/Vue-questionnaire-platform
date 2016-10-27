@@ -1,8 +1,10 @@
 <template lang="html">
   <div class="container">
     <div class="sidebar">
-      <h3 class="title">Mertens Liu</h3>
       <div class="panel-wrap">
+        <div class="welcome">
+          <h4>欢迎你！{{ userName }}</h4>
+        </div>
         <ul class="panel">
           <li v-for="item in routeItems">
             <a
@@ -24,10 +26,11 @@
 export default {
   data () {
     return {
+      userName: '',
       routeItems: [
         {
           link: {
-            path: '/questionare',
+            path: '/platform/questionare',
             activeClass: 'is-crt'
           },
           icon: '&#xe61c;',
@@ -35,7 +38,7 @@ export default {
         },
         {
           link: {
-            path: '/new-home/',
+            path: '/platform/new/',
             activeClass: 'is-crt'
           },
           icon: '&#xe60f;',
@@ -43,6 +46,26 @@ export default {
         }
       ]
     }
+  },
+  created () {
+    window.fetch('/getUserName', {
+      method: 'get',
+      credentials: 'same-origin'
+    })
+    .then(res => {
+      return res.json()
+    })
+    .then(result => {
+      if (result.code === 0) {
+        this.userName = result.userName
+      }
+      if (result.code === -1) {
+        this.$route.router.go({ path: '/login' })
+      }
+    })
+    .catch(err => {
+      console.log(err)
+    })
   }
 }
 </script>
@@ -68,9 +91,17 @@ export default {
       letter-spacing: .2rem;
     }
     .panel-wrap {
+      .welcome {
+        font-size: $font-size-default;
+        color: $light-gray;
+        letter-spacing: .1rem;
+        margin-top: 4rem;
+        padding-left: 3rem;
+      }
       @at-root .panel {
         list-style: none;
         padding: 0;
+        margin-top: 3rem;
         .link {
           display: flex;
           align-items: center;

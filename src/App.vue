@@ -1,18 +1,17 @@
 <template>
-  <layout></layout>
+  <router-view></router-view>
 </template>
 
 <script>
-import Layout from './components/layout/Layout'
-
 export default {
-  replace: false,
-  components: {
-    Layout
-  }
+  replace: false
 }
 </script>
 
 <style lang="scss">
 @import "./scss/base";
+body {
+  min-width: 1024px;
+  overflow: auto !important;
+}
 </style>

@@ -1,42 +1,45 @@
 <template lang="html">
   <li>
     <div class="content">
+      <!-- 问题题目 -->
       <p
         @keyup="changeQuestionTitle(qIndex, $event)"
         class="input title" contenteditable>{{ question.title }}</p>
+      <!-- 问题题目 end -->
+      <!-- 所有答案 -->
       <ol v-if="question.type !== 'text'" class="answers">
+        <!-- 答案 -->
         <li
           v-for="answer in question.answers"
-          track-by="$index"
           class="answer">
-          <input type="{{ question.type }}" name="问题{{qIndex + 1}}">
+          <!-- 选择框 -->
+          <input class="select" type="{{ question.type }}" name="问题{{qIndex + 1}}">
+          <!-- 选项内容 -->
           <div class="option">
-            <p
-              @keyup="changeOptionValue(qIndex, $index, $event)"
-              @focus="showOptionTools(qIndex, $index)"
-              @blur="hideOptionTools(qIndex, $index)"
-              class="input"
-              contenteditable>{{ answer.value }}</p>
-            <ul
-              :class="{
-                'active': answer.showOptionTools
-              }"
-              @mouseover="panelLock(qIndex, $index)"
-              @mouseout="panelUnlock(qIndex, $index)"
-              class="option-panel">
+            <div class="input-fix">
+              <p
+                @keyup="changeOptionValue(qIndex, $index, $event)"
+                @change="changeOptionValue(qIndex, $index, $event)"
+                class="input"
+                contenteditable>{{ answer }}</p>
+            </div>
+            <!-- 选项工具框 -->
+            <ul class="option-panel">
               <li
                 @click="optionPositionFront(qIndex, $index)"
-                class="iconfont">&#xe63e;</li>
+                class="iconfont">↑</li>
               <li
                 @click="optionPositionBack(qIndex, $index)"
-                class="iconfont">&#xe63f;</li>
+                class="iconfont">↓</li>
               <li
+                v-show="question.answers.length > 2"
                 @click="deleteOption(qIndex, $index)"
                 class="iconfont">&#xe646;</li>
             </ul>
           </div>
         </li>
       </ol>
+      <!-- 所有答案 end -->
       <div
         @click="addOption(qIndex)"
         v-if="question.type !== 'text'"
@@ -110,18 +113,6 @@ export default {
     deleteOption (qIndex, oIndex) {
       this.$dispatch('delete-option', qIndex, oIndex)
     },
-    showOptionTools (qIndex, oIndex) {
-      this.$dispatch('show-option-tools', qIndex, oIndex)
-    },
-    hideOptionTools (qIndex, oIndex) {
-      this.$dispatch('hide-option-tools', qIndex, oIndex)
-    },
-    panelLock (qIndex, oIndex) {
-      this.$dispatch('lock-panel', qIndex, oIndex)
-    },
-    panelUnlock (qIndex, oIndex) {
-      this.$dispatch('unlock-panel', qIndex, oIndex)
-    },
     copyQuestion (qIndex) {
       this.$dispatch('copy-question', qIndex)
     },
@@ -143,7 +134,8 @@ export default {
 @import "../../scss/helpers/mixins";
 .question {
   @include clearfix;
-  padding: 1rem 0;
+  padding: 1rem;
+  border-radius: .4rem;
   list-style: none;
   &:hover {
     background-color: $bg-gray;
@@ -164,6 +156,9 @@ export default {
     cursor: pointer;
     line-height: 1.5;
     text-align: center;
+    .order {
+      line-height: 2.4rem;
+    }
     .opertions {
       margin-top: .3rem;
       list-style: none;
@@ -186,8 +181,7 @@ export default {
       background-color: transparent;
       margin: 0;
       outline: none;
-      &:hover,
-      &:focus {
+      &:hover {
         border-color: $blue;
         background-color: $bg-yellow;
       }
@@ -195,8 +189,10 @@ export default {
     .title {
       font-size: $font-size-default;
       line-height: 1.5;
-      width: 90%;
-      max-width: 90%;
+      width: 100%;
+      max-width: 100%;
+      border-radius: .3rem;
+      line-height: 2.4rem;
       &:hover {
         border-color: $light-black;
         background-color: $bg-yellow;
@@ -212,38 +208,65 @@ export default {
       .answer {
         display: flex;
         align-items: flex-start;
-        input {
-          margin-top: .6rem;
-          margin-right: .5rem;
+        margin-bottom: .4rem;
+        @include clearfix;
+        .select {
+          display: inline-block;
+          height: 2.4rem;
+          width: 2rem;
+          float: left;
+          position: relative;
         }
         .option {
-          display: inline-block;
-          width: 90%;
-          max-width: 90%;
-          font-size: $font-size-xs;
-          position: relative;
-          .option-panel {
-            padding: 0;
-            position: absolute;
-            z-index: 999;
-            top: 0;
-            right: 0;
-            font-size: $font-size-default;
-            visibility: hidden;
-            transform: translateY(-100%);
-            background-color: $blue;
-            &.active {
-              visibility: visible;
+          font-size: $font-size-default;
+          float: left;
+          width: 100%;
+          margin-left: -2rem;
+          padding-left: 2rem;
+          @include clearfix;
+          .input-fix {
+            float: left;
+            width: 100%;
+            padding-right: 10rem;
+            .input {
+              line-height: 2.4rem;
+              border: 1px solid transparent;
+              background-color: transparent;
+              margin: 0;
+              outline: none;
+              padding: 0 .2rem;
+              border-radius: .3rem;
+              color: #777;
             }
+          }
+          .option-panel {
+            display: none;
+            float: left;
+            width: 10rem;
+            margin-left: -12rem;
+            font-size: $font-size-default;
             .iconfont {
               list-style: none;
               float: left;
-              padding: 0 .25rem;
-              line-height: 1.5;
-              color: #fff;
+              width: 2rem;
+              line-height: 2.4rem;
+              color: $blue;
+              padding: 0;
+              text-align: center;
               &:hover {
                 color: lighten($blue, 30%);
               }
+            }
+          }
+          &:hover {
+            .input-fix {
+              .input {
+                border-color: $blue;
+                background-color: $bg-yellow;
+              }
+            }
+            .option-panel {
+              display: block;
             }
           }
         }
@@ -268,7 +291,7 @@ export default {
     }
     .option {
       .textarea {
-        width: 85%;
+        width: 100%;
         height: 10rem;
         margin-top: .8rem;
         border: 1px solid $light-black;

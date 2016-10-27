@@ -40,8 +40,18 @@
   cursor: pointer;
   &:hover {
     color: #fff;
+    background-color: lighten($bg-color, 10%);
+  }
+  &:active {
+    color: #fff;
     background-color: $bg-color;
   }
+}
+@mixin btn-disabled {
+  border-color: $light-gray !important;
+  color: $light-gray !important;
+  background-color: #fff !important;
+  cursor: default !important;
 }
 @mixin placeholder-style {
   ::-webkit-input-placeholder { @content; }

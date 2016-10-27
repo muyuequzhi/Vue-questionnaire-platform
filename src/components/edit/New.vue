@@ -4,14 +4,21 @@
       <span class="iconfont">&#xe61c;</span>
       <h3 class="title">创建一个新的调查问卷</h3>
       <a
-        v-link="{ path: '/new-home/edit' }"
+        v-link="{ path: '/platform/new/edit' }"
+        @click="setMode"
         class="btn">新建</a>
     </div>
   </div>
 </template>
 
 <script>
-export default {}
+export default {
+  methods: {
+    setMode () {
+      window.sessionStorage.setItem('edit-mode', 'create')
+    }
+  }
+}
 </script>
 
 <style lang="scss">

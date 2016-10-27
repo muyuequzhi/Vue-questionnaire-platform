@@ -5,26 +5,55 @@ import NewHome from './components/edit/Home'
 import NewQuestionare from './components/edit/New'
 import Questionare from './components/questionare/Questionare'
 import Edit from './components/edit/Edit'
+import Login from './components/login/Login'
+import VueValidator from 'vue-validator'
+import Layout from './components/layout/Layout'
 
+Vue.use(VueValidator)
 Vue.use(VueRouter)
-let router = new VueRouter()
+
+Vue.validator('latin', function (val) {
+  return !val.match(/[^a-zA-Z0-9_]/)
+})
+Vue.validator('email', function (val) {
+  let pattern = /^([\w-_]+(?:\.[\w-_]+)*)@((?:[a-z0-9]+(?:-[a-zA-Z0-9]+)*)+\.[a-z]{2,6})$/i
+  return pattern.test(val)
+})
+Vue.filter('camelCaseToDash', function (value) {
+  return value.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+})
+
+const router = new VueRouter({
+  history: true,
+  saveScrollPosition: true
+})
 router.map({
-  '/new-home': {
-    component: NewHome,
+  '/platform': {
+    component: Layout,
     subRoutes: {
-      '/': {
-        component: NewQuestionare
+      '/questionare': {
+        component: Questionare
       },
-      '/edit': {
-        component: Edit
+      '/new': {
+        component: NewHome,
+        subRoutes: {
+          '/': {
+            component: NewQuestionare
+          },
+          '/edit': {
+            component: Edit
+          }
+        }
       }
     }
   },
-  '/questionare': {
-    component: Questionare
+  '/login': {
+    component: Login
   }
 })
 router.redirect({
-  '/': '/questionare'
+  '/': '/platform/questionare',
+  '/platform': '/platform/questionare'
 })
 router.start(App, 'body')
+exports.router = router

@@ -5,19 +5,19 @@
         <tr class="calendar-header">
           <th class="calendar-prev" @click="prev">&lt;</th>
           <th class="calendar-select" :colspan="mode === 'date' ? 5 : 1">
-            <div v-if="mode === 'date'" @click="changeMode">{{year}}年 {{month}}月</div>
-            <div v-if="mode === 'month'" @click="changeMode">{{year}} 年</div>
-            <div v-if="mode === 'year'">{{ yearRangeStart }} - {{ yearRangeEnd }}</div>
+            <div v-show="mode === 'date'" @click="changeMode">{{year}}年 {{month}}月</div>
+            <div v-show="mode === 'month'" @click="changeMode">{{year}} 年</div>
+            <div v-show="mode === 'year'">{{ yearRangeStart }} - {{ yearRangeEnd }}</div>
           </th>
           <th class="calendar-next" @click="next">&gt;</th>
         </tr>
-        <tr v-if="mode === 'date'" class="calendar-weeks">
+        <tr v-show="mode === 'date'" class="calendar-weeks">
           <th class="calendar-week" v-for="week in calendar.weeks">{{ week }}</th>
         </tr>
       </thead>
       <tbody class="calendar-body">
         <tr
-          v-if="mode === 'date'"
+          v-show="mode === 'date'"
           v-for="line in calendar.days">
           <td
             class="calendar-day"
@@ -26,7 +26,7 @@
             v-for="day in line">{{ day.date }}</td>
         </tr>
         <tr
-          v-if="mode === 'month'"
+          v-show="mode === 'month'"
           v-for="line in months"
           >
           <td
@@ -35,7 +35,7 @@
             v-for="eachMonth in line">{{ eachMonth }} 月</td>
         </tr>
         <tr
-          v-if="mode === 'year'"
+          v-show="mode === 'year'"
           v-for="line in years"
           >
           <td
@@ -90,10 +90,17 @@ export default {
       if (!this.range) {
         let dateSelected = new Date(this.dateSelected)
         let isCrtMonth = (this.year === dateSelected.getFullYear()) && (this.month === dateSelected.getMonth() + 1)
+
+        let isThisYear = this.year === new Date().getFullYear()
+        let isPrevYear = this.year < new Date().getFullYear()
+        let isThisMonth = this.month === (new Date().getMonth() + 1)
+        let isPrevMonth = this.month < (new Date().getMonth() + 1)
+
         for (let i = 1; i <= crtMonthLastDate; i++) {
           totalDate.push({
             date: i,
-            selected: isCrtMonth && (i === dateSelected.getDate())
+            selected: isCrtMonth && (i === dateSelected.getDate()),
+            disabled: isPrevYear || (isThisYear && isPrevMonth) || (isThisYear && isThisMonth && i < new Date().getDate())
           })
         }
       } else {

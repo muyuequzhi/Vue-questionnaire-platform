@@ -1,40 +1,49 @@
 <template lang="html">
   <!-- 问卷列表开始 -->
   <div class="wrap">
-    <h3 class="title">我的问卷</h3>
     <table class="table" v-if="qnData.length !== 0">
       <thead>
         <th></th>
         <th>问卷名</th>
         <th>结束时间</th>
         <th>状态</th>
-        <td></td>
+        <th>操作</th>
       </thead>
       <tbody>
+        <!-- 问卷列表 -->
         <tr v-for="qn in qnData">
           <td><span
-            @click="toggleSelected($index)"
-            class="iconfont">{{{ inArray(this.qnSelected, qnData[$index].qnId) ? selectedHTML : unSelectedHTML }}}</span></td>
+            @click="toggleSelected(qn.qnId)"
+            class="iconfont">{{{ inArray(this.qnSelected, qn.qnId) ? selectedHTML : unSelectedHTML }}}</span></td>
           <td>{{qn.title}}</td>
           <td><time class="time" :class="filterClass(qn)">{{qn.expires}}</time></td>
           <td><span class="status" :class="filterClass(qn)">{{ judgeStatus(qn) }}</span></td>
           <td>
             <div class="tools">
               <span
-                @click="deleteBtnClickHandler($index)"
+                @click="deleteBtnClickHandler(qn)"
                 class="iconfont delete">&#xe60d;</span>
-              <span class="btn" @click="editQn($index)">编辑</span>
-              <span class="btn">{{ qn.public ? '查看数据' : '发布问卷' }}</span>
+              <span class="btn" @click="editQn(qn)">编辑</span>
+              <span class="btn" :class="{ disabled : !qn.publish }">{{ '查看数据' }}</span>
             </div>
           </td>
         </tr>
+        <!-- 问卷列表 end -->
       </tbody>
     </table>
     <div class="btn-group" v-if="qnData.length !== 0">
       <button class="btn" @click="selectAll">{{ isSelectAll ? '全选' : '全不选' }}</button>
       <button class="btn" @click="deleteSelectedBtnHandler">删除</button>
     </div>
-    <p v-else>您还没有添加问卷~~</p>
+    <div
+      class="tips"
+      v-else>
+        <div class="content">
+          <p><span class="iconfont">&#xe608;</span></p>
+          <p>你还没添加任何问卷</p>
+        </div>
+      </div>
+    <!-- 删除一份问卷 -->
     <modal
       :show.sync="showDeleteModal"
       cancel-text="取消"
@@ -45,8 +54,10 @@
         <p>你确定要删除 <span :style="{ color: '#999' }">{{qnTitleIfDelete}}</span> 这份问卷吗？</p>
       </div>
     </modal>
+    <!-- 删除一份问卷 end -->
+    <!-- 删除多份问卷 -->
     <modal
-      :show.sync="showDeleteSelected"
+      :show.sync="showDeleteSelectedModal"
       cancel-text="取消"
       ok-text="确定"
       :callback="deleteSelectedHandler"
@@ -55,6 +66,7 @@
         <p>你确定要删除这 <span :style="{ color: '#999' }">{{qnSelected.length}}</span> 份问卷吗？</p>
       </div>
     </modal>
+    <!-- 删除多份问卷 end -->
   </div>
   <!-- 问卷列表结束 -->
 </template>
@@ -64,14 +76,14 @@ import Modal from '../common/Modal'
 export default {
   data () {
     return {
-      qnData: this.getQnData(),
+      qnData: [],
       unSelectedHTML: '&#xe647;',
       selectedHTML: '&#xe649;',
       qnSelected: [],
       showDeleteModal: false,
       qnTitleIfDelete: '',
       qnIdIfDelete: -1,
-      showDeleteSelected: false
+      showDeleteSelectedModal: false
     }
   },
   computed: {
@@ -82,16 +94,38 @@ export default {
   components: {
     Modal
   },
+  created () {
+    this.getQnData()
+  },
   methods: {
     getQnData () {
-      return window.localStorage.getItem('pf-all-qn') ? JSON.parse(window.localStorage.getItem('pf-all-qn')) : []
+      window.fetch('/getUserQnData', {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        return response.json()
+      })
+      .then(result => {
+        if (result.code === 0) {
+          this.qnData = result.data
+        }
+        if (result.code === -2) {
+          this.$route.router.go({ path: '/login' })
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
     },
     inArray (arr, val) {
       return arr.some(item => item === val)
     },
+    // 选中某个问卷
     addSelected (qnId) {
-      this.qnSelected.push(Number(qnId))
+      this.qnSelected.push(qnId)
     },
+    // 取消选中某个问卷
     deleteSelected (qnId) {
       this.qnSelected.some((item, itemIndex) => {
         if (item === qnId) {
@@ -100,41 +134,53 @@ export default {
         }
       })
     },
-    toggleSelected (index) {
-      let qnId = this.qnData[index].qnId
+    toggleSelected (qnId) {
       if (this.inArray(this.qnSelected, qnId)) {
         this.deleteSelected(qnId)
       } else {
         this.addSelected(qnId)
       }
     },
-    deleteQn (qnId) {
-      let index = 0
-      let len = this.qnData.length
-      while (index < len) {
-        if (this.qnData[index].qnId === qnId) {
-          return this.qnData.splice(index, 1)
-        }
-        index++
-      }
-      this.qnData.splice(index, 1)
-    },
-    deleteBtnClickHandler (index) {
+    // 点击删除某个问卷的按钮
+    deleteBtnClickHandler (qn) {
       this.showDeleteModal = true
-      this.qnTitleIfDelete = this.qnData[index].title
-      this.qnIdIfDelete = this.qnData[index].qnId
+      this.qnTitleIfDelete = qn.title
+      this.qnIdIfDelete = qn.qnId
     },
+    // 确定删除某个问卷
     deleteQnModalHandler () {
       this.showDeleteModal = false
       this.deleteQn(this.qnIdIfDelete)
     },
+    // 点击删除多个问卷按钮
     deleteSelectedBtnHandler () {
       if (this.qnSelected.length !== 0) {
-        this.showDeleteSelected = true
+        this.showDeleteSelectedModal = true
       }
     },
+    // 确定删除多个问卷
     deleteSelectedHandler () {
+      this.showDeleteSelectedModal = false
       this.deleteAll()
+    },
+    deleteQn (qnId) {
+      window.fetch('/deleteUserQn', {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `qnId=${qnId}`,
+        credentials: 'same-origin'
+      })
+      .then(res => {
+        return res.json()
+      })
+      .then(result => {
+        if (result.code === 1) {
+          this.getQnData()
+          this.qnSelected = []
+        }
+      })
     },
     selectAll () {
       if (this.qnSelected.length === this.qnData.length) {
@@ -150,21 +196,35 @@ export default {
       }
     },
     deleteAll () {
-      this.qnSelected.forEach((qnId) => {
-        this.deleteQn(qnId)
-        this.showDeleteSelected = false
+      window.fetch('/deleteUserQn', {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `qnList=${JSON.stringify(this.qnSelected)}`,
+        credentials: 'same-origin'
+      })
+      .then(res => {
+        return res.json()
+      })
+      .then(result => {
+        if (result.code === 0) {
+          this.getQnData()
+          // 隐藏 Modal
+          this.qnSelected = []
+        }
       })
     },
-    editQn (index) {
-      let data = this.qnData[index]
-      window.localStorage.setItem('qn-editing', JSON.stringify(data))
-      this.$route.router.go({ path: '/new-home/edit' })
+    editQn (qn) {
+      window.sessionStorage.setItem('edit-mode', 'modify')
+      window.sessionStorage.setItem('current-qn-id', qn.qnId)
+      this.$route.router.go({ path: '/platform/new/edit' })
     },
     judgeStatus (qn) {
       let qnExpires = new Date(qn.expires).getTime()
       if (qnExpires < new Date().getTime()) {
         return '已过期'
-      } else if (qn.public) {
+      } else if (qn.publish) {
         return '已发布'
       }
       return '未发布'
@@ -184,6 +244,7 @@ export default {
 @import "../../scss/base";
 @import "../../scss/helpers/mixins";
 .wrap {
+  height: 100%;
   overflow: hidden;
   padding: 0 6rem;
   @at-root .title {
@@ -218,6 +279,10 @@ export default {
           &:nth-child(5) {
             text-align: right;
           }
+        }
+        th:last-child {
+          text-align: right;
+          padding-right: 13rem;
         }
       }
     }
@@ -262,6 +327,19 @@ export default {
             &:active {
               background-color: $blue;
             }
+            &.disabled {
+              border-color: $gray;
+              background-color: #fff;
+              color: $gray;
+              cursor: default;
+            }
+            &.publish {
+              background-color: lighten($blue, 15%);
+              color: #fff;
+              &:hover {
+                background-color: $blue;
+              }
+            }
           }
           .iconfont,
           .btn {
@@ -287,6 +365,19 @@ export default {
       &:active {
         background-color: $blue;
       }
+    }
+  }
+}
+.tips {
+  height: 100%;
+  @include child-center;
+  .content {
+    text-align: center;
+    margin-top: -10rem;
+    font-size: $font-size-xxl;
+    .iconfont {
+      margin: 0;
+      font-size: 10rem;
     }
   }
 }
