@@ -40,42 +40,6 @@ app.use(session({
   })
 }))
 
-// 发布问卷
-app.post('/publishQn', function (req, res) {
-  if (req.session.isLogin) {
-    var crtQnData = JSON.parse(req.body.qnData)
-    crtQnData.publish = true
-    // 先删除旧的问卷
-    UserDataModel.update(
-      { email: req.session.userInfo.userEmail },
-      { $pull : { "qnData": { "qnId": crtQnData.qnId } } },
-      function (err) {
-        if (err) return console.log('问卷 ' + qnId + ' 删除失败')
-      })
-    // 再插入编辑好的问卷
-    UserDataModel.update(
-      { email: req.session.userInfo.userEmail },
-      { $push: { qnData: crtQnData } },
-      function (err) {
-        if (err) {
-          res.send({
-            code: -2,
-            msg: '发布失败'
-          })
-          return console.log('发布失败：', err)
-        }
-        res.send({
-          code: 0,
-          msg: '发布成功！'
-        })
-      })
-  } else {
-    res.send({
-      code: -1,
-      msg: '请登录！'
-    })
-  }
-})
 // 查询用户名
 app.get('/getUserName', function (req, res) {
   if (req.session.isLogin) {
@@ -321,7 +285,7 @@ app.post('/login', function (req, res) {
     if (!userInfo) {
       res.send({
         code: -1,
-        msg: '用户不存在！'
+        msg: '用户不存在'
       })
       return console.log('用户不存在！')
     }
@@ -357,5 +321,4 @@ app.post('/signout', function (req, res) {
     msg: '登出成功！'
   })
 })
-
 module.exports = app

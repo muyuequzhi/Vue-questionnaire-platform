@@ -195,19 +195,16 @@ export default {
       return val === relateValue
     },
     queryEmail (val) {
-      if (this.mode === 'signupForm') {
-        let url = '/getdatabyemail?email=' + val
-        return window.fetch(url)
-          .then(res => {
-            return res.json()
-          })
-          .then((json) => {
-            return json.code === 0
-              ? Promise.reject()
-              : Promise.resolve()
-          })
-      }
-      return false
+      let url = '/getdatabyemail?email=' + val
+      return window.fetch(url)
+        .then(res => {
+          return res.json()
+        })
+        .then((json) => {
+          return json.code === 0
+            ? Promise.reject()
+            : Promise.resolve()
+        })
     }
   },
   methods: {
